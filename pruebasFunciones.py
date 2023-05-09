@@ -1,4 +1,26 @@
 import os
+
+def split_text(file, maxSize, counter):
+    with open(file, "r") as f:
+        current_output_size = 0
+        current_output_file = os.path.join(f"file_{counter}.txt")
+
+        line = f.readline()
+        while line:
+
+            with open(current_output_file, "a") as output_f:
+                output_f.write(line)
+
+            current_output_size += len(line.encode("utf-8"))
+
+            if current_output_size > maxSize * 1024 * 1024:
+                counter += 1
+                current_output_file = os.path.join(f"file_{counter}.txt")
+                current_output_size = 0
+
+            line = f.readline()
+    return counter
+
 def splitfile(infile_path, size):
     file_name, ext = infile_path.rsplit('.', 1)
     i = 0
