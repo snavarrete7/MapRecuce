@@ -42,16 +42,22 @@ def split_file(file, maxSize):
     return name_file
 
 
-def map_phase(file):
-    return file
+def map_phase(file_names):
+    return None
+
+def map_word(words):
+    lista = []
+    longitud = len(words)
+    for i in range(longitud):
+        lista.append((words[i],1))
+    return lista
 
 
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     inicio = time.time()
 
     num_processes = 4
-    files = ["prueba110mb.txt", "ArcTecSw_2023_BigData_Practica_Part1_Sample.txt"]
+    files = ["ArcTecSw_2023_BigData_Practica_Part1_Sample.txt", "prueba110mb.txt"]
 
     stats = os.stat('prueba110mb.txt')
     file_size = stats.st_size / 1e6
@@ -65,5 +71,21 @@ if __name__ == '__main__':
     for fi in file_names[0]:
         print(fi)
 
+    res_map = []
+    pool = multiprocessing.Pool(processes=num_processes)
+    for file in file_names[0]:
+        map_words = []
+        with open(file, 'r') as f:
+            words = f.read().lower().split()
+            words_clean = []
+            for w in words:
+                words_clean.append(re.sub(r'[^a-zA-Z0-9]', '', w))
+            map_words = pool.map(map_word, [words_clean])
+            for pair in map_words[0]:
+                res_map.append(pair)
+    pool.close()
+    pool.join()
     fin = time.time()
     print(fin - inicio)
+    print(res_map)
+
