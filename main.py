@@ -2,29 +2,34 @@ import multiprocessing
 import os
 import re
 import time
+from os import remove
 
-
-def split_phase(files):
+def split_phase(file):
     proces_name = multiprocessing.current_process().name
     print(proces_name)
     namesList = []
 
-    for file in files:
-        stats = os.stat(file)
-        file_size = stats.st_size / 1e6
+    stats = os.stat(file)
+    file_size = stats.st_size / 1e6
 
-        if file_size >= 100:
-            max_size_file = 10 * 1024 * 1024
-            names = split_file(file, max_size_file)
-            for name in names:
-                namesList.append(name)
-        else:
-            names = split_file(file, 100)
-            for name in names:
-                namesList.append(name)
-            #namesList.append(str(file))
+    if file_size >= 100:
+        splited = True
+        max_size_file = 10 * 1024 * 1024
+        names = split_file(file, max_size_file)
+        for name in names:
+            namesList.append(name)
+    elif 0 < file_size < 1:
+        splited = True
+        names = split_file(file, 100)
+        for name in names:
+            namesList.append(name)
+    else:
+        splited = False
 
-    return namesList
+    if splited == True:
+        return namesList
+    else:
+        return None
 
 
 def split_file(file, maxSize):
@@ -47,7 +52,7 @@ def split_file(file, maxSize):
 
 def map_phase(file_names):
     res_map = []
-    for file in file_names[0]:
+    for file in file_names:
         map_words = []
         with open(file, 'r') as f:
             words = f.read().lower().split()
@@ -78,41 +83,59 @@ if __name__ == '__main__':
     inicio = time.time()
 
     num_processes = 4
-    files = ["ArcTecSw_2023_BigData_Practica_Part1_Sample.txt", "ArcTecSw_2023_BigData_Practica_Part1_Sample - copia.txt"]
+    files = ["prueba110mb.txt","ArcTecSw_2023_BigData_Practica_Part1_Sample.txt"]
 
-    stats = os.stat('prueba110mb.txt')
-    file_size = stats.st_size / 1e6
-    print("Mb size of the file: " + str(stats.st_size / 1e6))
+    for file in files:
 
-    pool = multiprocessing.Pool(processes=num_processes)
-    file_names = pool.map(split_phase, [files])
-    pool.close()
-    pool.join()
+        pool = multiprocessing.Pool(processes=num_processes)
+        file_names = pool.map(split_phase, [file])
+        pool.close()
+        pool.join()
 
-    for fi in file_names[0]:
-        print(fi)
+        names_to_map = []
+        splited = None
+        if file_names[0] is None:
+            file_names.clear()
+            names_to_map.append(file)
+            splited = False
+            #for fi in file_names[0]:
+                #print(fi)
+        else:
+            splited = True
+            for i in file_names[0]:
+                names_to_map.append(i)
 
-    pool = multiprocessing.Pool(processes=num_processes)
-    res_map = pool.map(map_phase, [file_names])
-    pool.close()
-    pool.join()
 
-    '''
-    res_map = []
-    pool = multiprocessing.Pool(processes=num_processes)
-    for file in file_names[0]:
-        map_words = []
-        with open(file, 'r') as f:
-            words = f.read().lower().split()
-            words_clean = []
-            for w in words:
-                words_clean.append(re.sub(r'[^a-zA-Z0-9]', '', w))
-            map_words = pool.map(map_word, [words_clean])
-            for pair in map_words[0]:
-                res_map.append(pair)
-    pool.close()
-    pool.join()'''
+        pool = multiprocessing.Pool(processes=num_processes)
+        res_map = pool.map(map_phase, [names_to_map])
+        pool.close()
+        pool.join()
 
-    fin = time.time()
-    print(res_map[0])
+        #Eliminar files en file_names si no esta vacio (quiere decir que se han spliteado)
+
+        if splited:
+            for file_to_delete in file_names[0]:
+                remove(file_to_delete)
+            file_names.clear()
+
+        '''
+        res_map = []
+        pool = multiprocessing.Pool(processes=num_processes)
+        for file in file_names[0]:
+            map_words = []
+            with open(file, 'r') as f:
+                words = f.read().lower().split()
+                words_clean = []
+                for w in words:
+                    words_clean.append(re.sub(r'[^a-zA-Z0-9]', '', w))
+                map_words = pool.map(map_word, [words_clean])
+                for pair in map_words[0]:
+                    res_map.append(pair)
+        pool.close()
+        pool.join()'''
+
+        fin = time.time()
+        print("Map result for file: " + str(file))
+        print("Number of words: " + str(len(res_map[0])))
+        print(res_map[0])
     print(fin - inicio)
