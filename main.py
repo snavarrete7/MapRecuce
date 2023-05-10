@@ -18,6 +18,12 @@ def split_phase(file):
         names = split_file(file, max_size_file)
         for name in names:
             namesList.append(name)
+    elif file_size >= 900:
+        splited = True
+        max_size_file = 100 * 1024 * 1024
+        names = split_file(file, max_size_file)
+        for name in names:
+            namesList.append(name)
     else:
         splited = False
 
@@ -90,17 +96,20 @@ def map_phase(file):
 
         for pair in map_words:
             res_map.append(pair)
-    print("Map done for file:" + file)
+    #print("Map done for file:" + file)
 
 
     return res_map
 
 def map_word(words):
     lista = []
+    file_mapped = []
     longitud = len(words)
     for i in range(longitud):
         lista.append((words[i], 1))
-    return lista
+    for elementMapped in lista[0]:
+        file_mapped.append(elementMapped)
+    return file_mapped
 
 def shuffle_phase(mapped_words):
     shuffled_dict = {}
@@ -128,7 +137,7 @@ if __name__ == '__main__':
     inicio = time.time()
 
     num_processes = 8
-    files = ["prueba110mb.txt", "ArcTecSw_2023_BigData_Practica_Part1_Sample.txt"]
+    files = ["prueba1g.txt", "ArcTecSw_2023_BigData_Practica_Part1_Sample.txt"]
 
     for file in files:
 
@@ -178,11 +187,11 @@ if __name__ == '__main__':
 
                     line_mapped = pool.map(map_word, [words_clean])
 
-                    for elementMapped in line_mapped[0]:
-                        file_mapped.append(elementMapped)
+
 
             pool.close()
             pool.join()'''
+
 
             pool = multiprocessing.Pool(processes=num_processes)
             file_mapped = pool.map(map_phase, [file_to_proces])
@@ -211,6 +220,8 @@ if __name__ == '__main__':
                     word_count_dict[word] += count
                 else:
                     word_count_dict[word] = count
+
+            print("Map-Reduce done for file: " + file_to_proces)
 
         total_words = 0
         for i in word_count_dict:
