@@ -12,9 +12,9 @@ def split_phase(file):
     stats = os.stat(file)
     file_size = stats.st_size / 1e6
 
-    if file_size >= 100:
+    if 100 <= file_size < 800:
         splited = True
-        max_size_file = 50 * 1024 * 1024
+        max_size_file = 10 * 1024 * 1024
         names = split_file(file, max_size_file)
         for name in names:
             namesList.append(name)
@@ -44,13 +44,41 @@ def split_file(file, maxSize):
                     written_size += len(chunk)
     return name_file
 
-
+''''
 def map_phase(file_names):
     res_map = []
     for file in file_names:
         map_words = []
         with open(file, 'r') as f:
-            words = f.read().split().lower()
+            #words = f.read().split().lower()
+            map_words = []
+            for line in f:
+                words = line.lower().split()
+                words_clean = []
+
+                for w in words:
+                    words_clean.append(re.sub(r'[^a-zA-Z0-9]', '', w))
+
+                longitud = len(words_clean)
+                for i in range(longitud):
+                    map_words.append((words_clean[i], 1))
+
+            for pair in map_words:
+                res_map.append(pair)
+        print("Map done for file:" + file)
+        remove(file)
+        print(file + " REMOVED")
+
+    return res_map'''
+
+def map_phase(file):
+    res_map = []
+
+    map_words = []
+    with open(file, 'r') as f:
+
+        for line in f:
+            words = line.lower().split()
             words_clean = []
 
             for w in words:
@@ -60,12 +88,12 @@ def map_phase(file_names):
             for i in range(longitud):
                 map_words.append((words_clean[i], 1))
 
-            for pair in map_words:
-                res_map.append(pair)
-        print("Map done for file:" + file)
+        for pair in map_words:
+            res_map.append(pair)
+    print("Map done for file:" + file)
+
 
     return res_map
-
 
 def map_word(words):
     lista = []
@@ -99,8 +127,8 @@ def reduce_words(j):
 if __name__ == '__main__':
     inicio = time.time()
 
-    num_processes = 10
-    files = ["prueba110mb.txt"]
+    num_processes = 8
+    files = ["prueba110mb.txt", "ArcTecSw_2023_BigData_Practica_Part1_Sample.txt"]
 
     for file in files:
 
@@ -125,62 +153,74 @@ if __name__ == '__main__':
         fsplit = time.time()
         print("SPLIT DONE " + str(fsplit - isplit))
 
+
+
+
         print("START MAP")
         imap = time.time()
-        #MAP
-        pool = multiprocessing.Pool(processes=num_processes)
-        res_map = pool.map(map_phase, [names_to_map])
-        pool.close()
-        pool.join()
-        fmap = time.time()
 
-        print("MAP DONE " + str(fmap - imap))
+        word_count_dict = {}
+        for file_to_proces in names_to_map:
 
-        #Eliminar archivos
-        if splited:
-            for file_to_delete in file_names[0]:
-                remove(file_to_delete)
-            file_names.clear()
+            res_map = []
+            file_mapped = []
+            '''
+            pool = multiprocessing.Pool(processes=num_processes)
+            with open(file_to_proces, 'r') as f:
 
-        print("FILES DELETED")
+                for line in f:
+                    line_mapped = []
+                    words = line.lower().split()
+                    words_clean = []
 
-        print("START SHUFFLE")
-        ishuf = time.time()
-        #SHUFFLE
-        res_shuffle = shuffle_phase(res_map[0])
-        fshuf = time.time()
+                    for w in words:
+                        words_clean.append(re.sub(r'[^a-zA-Z0-9]', '', w))
 
-        print("SHUFFLE DONE " + str(fshuf - ishuf))
+                    line_mapped = pool.map(map_word, [words_clean])
 
-        print("START REDUCE")
-        ireduce = time.time()
-        #REDUCE
-        pool = multiprocessing.Pool(processes=num_processes)
-        res_reduce = pool.map(reduce_phase, [res_shuffle])
-        pool.close()
-        pool.join()
-        finreduce = time.time()
+                    for elementMapped in line_mapped[0]:
+                        file_mapped.append(elementMapped)
 
-        print("REDUCE DONE " + str(finreduce - ireduce))
+            pool.close()
+            pool.join()'''
 
-        '''
-        initreduce = time.time()
-        dicti = {}
-        pool = multiprocessing.Pool(processes=num_processes)
-        for i, j in res_shuffle:
-            #dicti[i] = sum(j)
-            dicti[i] = pool.map(reduce_words, [j])
-        pool.close()
-        pool.join()
-        finreduce = time.time()'''
+            pool = multiprocessing.Pool(processes=num_processes)
+            file_mapped = pool.map(map_phase, [file_to_proces])
+            pool.close()
+            pool.join()
+
+            if splited == True:
+                remove(file_to_proces)
+
+            # SHUFFLE
+            res_shuffle = shuffle_phase(file_mapped[0]) #poner [0] o no segun el map que se quiera utilizar
+
+            #REDUCE
+            res_reduce = {}
+            pool = multiprocessing.Pool(processes=num_processes)
+            for i, j in res_shuffle:
+                # dicti[i] = sum(j)
+                res_reduce[i] = pool.map(reduce_words, [j])
+            pool.close()
+            pool.join()
+
+
+
+            for word, count in res_reduce.items():
+                if word in word_count_dict:
+                    word_count_dict[word] += count
+                else:
+                    word_count_dict[word] = count
 
         total_words = 0
-        for i in res_reduce[0]:
-            total_words = res_reduce[0][i] + total_words
+        for i in word_count_dict:
+            total_words = sum(word_count_dict[i]) + total_words
+        for i in word_count_dict:
+            word_count_dict[i] = sum(word_count_dict[i])
 
         print("Results for file: " + file)
-        for word in res_reduce[0]:
-            print(word + " : " + str(round(((res_reduce[0][word]/total_words)*100), 2)) + "%")
+        for i in word_count_dict:
+            print(i + " : " + str(round(((int(word_count_dict[i]) / total_words) * 100), 2)) + "%")
 
-    fin = time.time()
-    print(fin - inicio)
+        fin = time.time()
+        print(fin - inicio)
