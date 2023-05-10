@@ -18,11 +18,6 @@ def split_phase(file):
         names = split_file(file, max_size_file)
         for name in names:
             namesList.append(name)
-    elif 0 < file_size < 1:
-        splited = True
-        names = split_file(file, 100)
-        for name in names:
-            namesList.append(name)
     else:
         splited = False
 
@@ -98,8 +93,6 @@ if __name__ == '__main__':
             file_names.clear()
             names_to_map.append(file)
             splited = False
-            #for fi in file_names[0]:
-                #print(fi)
         else:
             splited = True
             for i in file_names[0]:
@@ -111,28 +104,11 @@ if __name__ == '__main__':
         pool.close()
         pool.join()
 
-        #Eliminar files en file_names si no esta vacio (quiere decir que se han spliteado)
-
+        #Eliminar archivos
         if splited:
             for file_to_delete in file_names[0]:
                 remove(file_to_delete)
             file_names.clear()
-
-        '''
-        res_map = []
-        pool = multiprocessing.Pool(processes=num_processes)
-        for file in file_names[0]:
-            map_words = []
-            with open(file, 'r') as f:
-                words = f.read().lower().split()
-                words_clean = []
-                for w in words:
-                    words_clean.append(re.sub(r'[^a-zA-Z0-9]', '', w))
-                map_words = pool.map(map_word, [words_clean])
-                for pair in map_words[0]:
-                    res_map.append(pair)
-        pool.close()
-        pool.join()'''
 
         fin = time.time()
         print("Map result for file: " + str(file))
