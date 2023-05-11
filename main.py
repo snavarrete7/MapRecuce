@@ -1,8 +1,13 @@
+import argparse
 import multiprocessing
 import os
 import re
 import time
 from os import remove
+
+''' Practica 2 ATS - Algoritmo Map-Reduce
+    Sergio Navarrete Villalta - 1565742
+    Rubén Simó Marín - 1569391      '''
 
 def split_phase(file):
     proces_name = multiprocessing.current_process().name
@@ -18,7 +23,7 @@ def split_phase(file):
         names = split_file(file, max_size_file)
         for name in names:
             namesList.append(name)
-    elif file_size >= 900:
+    elif file_size >= 800:
         splited = True
         max_size_file = 100 * 1024 * 1024
         names = split_file(file, max_size_file)
@@ -133,11 +138,7 @@ def reduce_words(j):
     return res
 
 
-if __name__ == '__main__':
-    inicio = time.time()
-
-    num_processes = 8
-    files = ["prueba1g.txt", "ArcTecSw_2023_BigData_Practica_Part1_Sample.txt"]
+def mainMapReduce(num_processes, files):
 
     for file in files:
 
@@ -233,5 +234,21 @@ if __name__ == '__main__':
         for i in word_count_dict:
             print(i + " : " + str(round(((int(word_count_dict[i]) / total_words) * 100), 2)) + "%")
 
-        fin = time.time()
-        print(fin - inicio)
+
+if __name__ == '__main__':
+    inicio = time.time()
+
+    arguments = argparse.ArgumentParser(description="Map-Reduce Algorythm")
+    arguments.add_argument('files', metavar='file', type=str, nargs='+', help="Add one or more files to process")
+    arguments.add_argument('-p', '--processes', type=int, default=2, help="Put the number of processes (default: 2)")
+    args = arguments.parse_args()
+
+    files = args.files
+    num_processes = args.processes
+
+    start = time.time()
+    mainMapReduce(num_processes, files)
+    end = time.time()
+
+    print(end - start)
+
