@@ -57,6 +57,83 @@ def split_file(file, maxSize):
                     out.write(chunk)
                     written_size += len(chunk)
 
+'''
+        res_map = []
+        pool = multiprocessing.Pool(processes=num_processes)
+        for file in file_names[0]:
+            map_words = []
+            with open(file, 'r') as f:
+                words = f.read().lower().split()
+                words_clean = []
+                for w in words:
+                    words_clean.append(re.sub(r'[^a-zA-Z0-9]', '', w))
+                map_words = pool.map(map_word, [words_clean])
+                for pair in map_words[0]:
+                    res_map.append(pair)
+        pool.close()
+        pool.join()'''
+
 size = 50 * 1024 * 1024
 split_file("prueba110mb.txt", size)
 '''se le pasa en BYTES al splitfile'''
+
+
+
+
+
+
+
+'''
+       pool = multiprocessing.Pool(processes=num_processes)
+       res_map = pool.map(map_phase, [names_to_map])
+       pool.close()
+       pool.join()
+       '''
+fmap = time.time()
+print("MAP DONE " + str(fmap - imap))
+
+# Eliminar archivos
+'''if splited:
+    for file_to_delete in file_names[0]:
+        remove(file_to_delete)
+    file_names.clear()
+
+print("FILES DELETED")'''
+
+print("START SHUFFLE")
+ishuf = time.time()
+# SHUFFLE
+res_shuffle = shuffle_phase(res_map[0])
+fshuf = time.time()
+
+print("SHUFFLE DONE " + str(fshuf - ishuf))
+
+print("START REDUCE")
+ireduce = time.time()
+# REDUCE
+pool = multiprocessing.Pool(processes=num_processes)
+res_reduce = pool.map(reduce_phase, [res_shuffle])
+pool.close()
+pool.join()
+finreduce = time.time()
+
+print("REDUCE DONE " + str(finreduce - ireduce))
+
+'''
+initreduce = time.time()
+dicti = {}
+pool = multiprocessing.Pool(processes=num_processes)
+for i, j in res_shuffle:
+    #dicti[i] = sum(j)
+    dicti[i] = pool.map(reduce_words, [j])
+pool.close()
+pool.join()
+finreduce = time.time()'''
+
+total_words = 0
+for i in res_reduce[0]:
+    total_words = res_reduce[0][i] + total_words
+
+print("Results for file: " + file)
+for word in res_reduce[0]:
+    print(word + " : " + str(round(((res_reduce[0][word] / total_words) * 100), 2)) + "%")

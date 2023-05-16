@@ -14,7 +14,7 @@ def split_phase(file):
     print(proces_name)
     namesList = []
 
-    stats = os.stat(file)
+    stats = os.stat("data/"+file)
     file_size = stats.st_size / 1e6
 
     if 100 <= file_size < 800:
@@ -39,20 +39,26 @@ def split_phase(file):
 
 
 def split_file(file, maxSize):
-    file_size = os.path.getsize(file)
+    file_size = os.path.getsize("data/" + file)
     num_files = (file_size + maxSize - 1) // maxSize
     name_file = []
-    with open(file, 'rb') as f:
+
+    with open("data/" + file, 'rb') as f:
+
         for i in range(num_files):
-            with open(f"{file}_{i}.txt", 'wb') as out:
-                written_size = 0
+
+            with open(f"data/" + file + "_" + str(i) + ".txt", 'wb') as out:
+
+                file_written_size = 0
                 name_file.append(file + "_" + str(i) + ".txt")
-                while written_size < maxSize:
-                    chunk = f.readline()
-                    if not chunk:
+
+                while file_written_size < maxSize:
+                    line = f.readline()
+                    if not line:
                         break
-                    out.write(chunk)
-                    written_size += len(chunk)
+                    out.write(line)
+                    file_written_size += len(line)
+
     return name_file
 
 ''''
@@ -86,7 +92,7 @@ def map_phase(file):
     res_map = []
 
     map_words = []
-    with open(file, 'r') as f:
+    with open("data/"+file, 'r') as f:
 
         for line in f:
             words = line.lower().split()
@@ -200,7 +206,7 @@ def mainMapReduce(num_processes, files):
             pool.join()
 
             if splited == True:
-                remove(file_to_proces)
+                remove("data/"+file_to_proces)
 
             # SHUFFLE
             res_shuffle = shuffle_phase(file_mapped[0]) #poner [0] o no segun el map que se quiera utilizar
@@ -245,7 +251,7 @@ if __name__ == '__main__':
 
     files = args.files
     num_processes = args.processes
-
+    print(num_processes)
     start = time.time()
     mainMapReduce(num_processes, files)
     end = time.time()
